@@ -2,48 +2,67 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define N 10 // Size of the array
-
 int main(int argc, char** argv) {
-    int rank, size;
-    int A[N];
+    MPI_Init(&argc, &argv); // Initialize the MPI environment
+
+    int world_size; // Total number of processes
+    int world_rank; // Rank of the current process
+
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size); // Get the total number of processes
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank); // Get the rank of the current process
+
+    int n = 10; // Size of the array
+    int *A = NULL; // Pointer to the array
+
+    // Allocate and initialize the array only in process 0
+    if (world_rank == 0) {
+        A = (int*)malloc(n * sizeof(int)); // Allocate memory for the array
+        for (int i = 0; i < n; i++) {
+            A[i] = i + 1; // Initialize the array with values 1 to n
+        }
+    }
+
+    // Broadcast the array size to all processes
+    MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD); 
+
+    // Determine the number of elements to sum for each process
+    int local_n = n / 2; // Each process sums half of the array
+    int *local_A = (int*)malloc(local_n * sizeof(int)); // Local array for each process
+
+    // Scatter the array to both processes
+    MPI_Scatter(A, local_n, MPI_INT, local_A, local_n, MPI_INT, 0, MPI_COMM_WORLD);
+
+    // Compute the local sum for each process
     int local_sum = 0;
-    int global_sum = 0;
-
-    MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-
-    // Initialize the array only on process 0
-    if (rank == 0) {
-        for (int i = 0; i < N; i++) {
-            A[i] = i + 1; // Fill array with values 1 to N
-        }
+    for (int i = 0; i < local_n; i++) {
+        local_sum += local_A[i];
     }
 
-    // Broadcast the array to all processes
-    MPI_Bcast(A, N, MPI_INT, 0, MPI_COMM_WORLD);
+    // Only process P0 will gather the result
+    int total_sum = 0;
+    if (world_rank == 0) {
+        // Receive the local sum from P1
+        int sum_from_P1;
+        MPI_Recv(&sum_from_P1, 1, MPI_INT, 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        
+        // Combine the sums
+        total_sum = local_sum + sum_from_P1;
 
-    // Each process calculates the sum of half of the array
-    int half = N / 2;
-    if (rank == 0) {
-        for (int i = 0; i < half; i++) {
-            local_sum += A[i]; // P0 sums the first half
-        }
-    } else if (rank == 1) {
-        for (int i = half; i < N; i++) {
-            local_sum += A[i]; // P1 sums the second half
-        }
+        // Free the allocated memory for the array
+        free(A);
+    } else if (world_rank == 1) {
+        // Send the local sum to P0
+        MPI_Send(&local_sum, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
     }
 
-    // Reduce the local sums to get the global sum
-    MPI_Reduce(&local_sum, &global_sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-
-    // Process 0 prints the final result
-    if (rank == 0) {
-        printf("Total Sum: %d\n", global_sum);
+    // Process P0 prints the final result
+    if (world_rank == 0) {
+        printf("Total sum of the array is: %d\n", total_sum);
     }
 
-    MPI_Finalize();
+    // Free local arrays
+    free(local_A);
+
+    MPI_Finalize(); // Clean up the MPI environment
     return 0;
 }

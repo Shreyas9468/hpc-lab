@@ -2,30 +2,30 @@
 #include <stdio.h>
 
 int main(int argc, char** argv) {
-    // Initialize the MPI environment
+    // Step 1: Initialize the MPI environment
     MPI_Init(&argc, &argv);
 
-    // Get the rank (process ID) of the current process
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    // Step 2: Get the total number of processes
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
-    // Get the size of the communicator (number of processes)
-    int size;
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    // Step 3: Get the rank of the process
+    int world_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
-    // Check if we have exactly 5 processes
-    if (size != 5) {
-        if (rank == 0) {
-            printf("Please run the program with exactly 5 processes.\n");
+    // Step 4: Check if the total number of processes is 5
+    if (world_size != 5) {
+        if (world_rank == 0) {
+            printf("This program requires exactly 5 processes.\n");
         }
-        MPI_Finalize();
-        return -1;
+        MPI_Finalize(); // Clean up MPI environment
+        return 1; // Exit if the number of processes is not 5
     }
 
-    // Each process prints its rank and the communicator size
-    printf("Process %d out of %d processes in MPI_COMM_WORLD\n", rank, size);
+    // Step 5: Display the rank and the communicator group
+    printf("Hello from process %d out of %d processes!\n", world_rank, world_size);
 
-    // Finalize the MPI environment
+    // Step 6: Finalize the MPI environment
     MPI_Finalize();
     return 0;
 }
