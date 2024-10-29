@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <omp.h>
 
-#define SIZE 1000  // Size of the matrix and vector
+#define SIZE 100  
 
 int main() {
-    // Allocate memory for matrix A and vector x, result vector y
+    
     double **A = (double **)malloc(SIZE * sizeof(double *));
     double *x = (double *)malloc(SIZE * sizeof(double));
     double *y = (double *)malloc(SIZE * sizeof(double));
@@ -14,31 +14,31 @@ int main() {
         A[i] = (double *)malloc(SIZE * sizeof(double));
     }
 
-    // Initialize matrix A and vector x with random values
+    
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++) {
-            A[i][j] = rand() % 10;  // Random values between 0 and 9
+            A[i][j] = rand() % 10;  
         }
-        x[i] = rand() % 10;  // Random values for vector x
-        y[i] = 0.0;  // Initialize result vector y to zero
+        x[i] = rand() % 10;  
+        y[i] = 0.0;  
     }
 
-    // Start the timer
+    
     double start_time = omp_get_wtime();
 
-    // Matrix-vector multiplication using OpenMP
-    #pragma omp parallel for  // Parallelize the outer loop
+    
+    #pragma omp parallel for  
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++) {
-            y[i] += A[i][j] * x[j];  // y[i] = A[i] * x
+            y[i] += A[i][j] * x[j];  
         }
     }
 
-    // Stop the timer
+    
     double end_time = omp_get_wtime();
     printf("Time taken for matrix-vector multiplication: %f seconds\n", end_time - start_time);
 
-    // Free allocated memory
+    
     for (int i = 0; i < SIZE; i++) {
         free(A[i]);
     }

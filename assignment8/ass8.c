@@ -7,13 +7,13 @@ int main(int argc, char** argv) {
     int world_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
-    // Both processes attempt to receive messages before sending
+    
     int received_message;
     if (world_rank == 0) {
         MPI_Recv(&received_message, 1, MPI_INT, 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         printf("Process 0 received message: %d\n", received_message);
         
-        // Now send a message after receiving
+        
         int message = 100;
         MPI_Send(&message, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
         printf("Process 0 sent message: %d\n", message);
@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
         MPI_Recv(&received_message, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         printf("Process 1 received message: %d\n", received_message);
         
-        // Now send a message after receiving
+        
         int message = 200;
         MPI_Send(&message, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
         printf("Process 1 sent message: %d\n", message);
